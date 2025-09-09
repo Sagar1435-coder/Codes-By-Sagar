@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Birthday Card</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top left, #ff9a9e, #fad0c4, #fad390);
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    .card {
+      background: white;
+      width: 380px;
+      height: 520px;
+      border-radius: 25px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+      text-align: center;
+      padding: 30px;
+      position: relative;
+      overflow: hidden;
+      animation: glow 3s infinite alternate;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 20px #ff6a00, 0 0 40px #ee0979; }
+      to   { box-shadow: 0 0 40px #ff6a00, 0 0 80px #ee0979; }
+    }
+
+    h1 {
+      color: #ff4e50;
+      font-size: 2.4em;
+      margin-bottom: 15px;
+      text-shadow: 2px 2px 8px rgba(255, 0, 0, 0.3);
+    }
+
+    p {
+      font-size: 1.1em;
+      color: #444;
+      margin-bottom: 20px;
+    }
+
+    .cake {
+      font-size: 80px;
+      animation: bounce 1.5s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-12px); }
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 25px;
+      padding: 12px 25px;
+      background: linear-gradient(45deg, #ff6a00, #ee0979);
+      color: white;
+      border-radius: 25px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: 0.3s;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      transform: scale(1.1) rotate(-2deg);
+    }
+
+    .secret {
+      margin-top: 20px;
+      font-size: 1.2em;
+      color: #ee0979;
+      font-weight: bold;
+      display: none;
+      animation: fadeIn 1.5s ease-in-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.5); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* Confetti */
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: red;
+      top: -10px;
+      animation: fall 5s infinite;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(110vh) rotate(720deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Happy Birthday 🎂</h1>
+    <div class="cake">🎉🎂🎉</div>
+    <p>Wishing you a day filled with<br> love, laughter, and joy!</p>
+    <button class="btn" onclick="revealSecret()">Reveal Secret 🎁</button>
+    <div id="secret" class="secret">✨ You are the most special gift in this world! 💖 ✨</div>
+  </div>
+
+  <script>
+    function revealSecret() {
+      document.getElementById("secret").style.display = "block";
+    }
+
+    // Confetti generator
+    function createConfetti() {
+      const confetti = document.createElement("div");
+      confetti.classList.add("confetti");
+      confetti.style.left = Math.random() * window.innerWidth + "px";
+      confetti.style.backgroundColor = 
+        ["#ff6a00", "#ee0979", "#00c9ff", "#92fe9d", "#f9d423"][Math.floor(Math.random() * 5)];
+      confetti.style.animationDuration = (Math.random() * 3 + 2) + "s";
+      document.body.appendChild(confetti);
+
+      setTimeout(() => { confetti.remove(); }, 5000);
+    }
+
+    setInterval(createConfetti, 300);
+  </script>
+</body>
+</html>
+
