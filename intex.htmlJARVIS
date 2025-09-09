@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>JARVIS — AI Science Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#03060d;--card:#0a0f1a;--accent:#00f0ff;--accent2:#8f00ff;
+  --text:#eaf6ff;--muted:#7b8aa5;}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;font-family:Orbitron,system-ui;
+    background:linear-gradient(135deg,#050b18,#0d0f1f);color:var(--text);}
+  .wrap{min-height:100%;display:grid;place-items:center;padding:16px;}
+  .panel{width:min(760px,95%);background:var(--card);
+    border-radius:20px;padding:20px;border:1px solid rgba(0,240,255,.15);
+    box-shadow:0 10px 40px rgba(0,0,0,.6);}
+  header{display:flex;gap:12px;align-items:center;padding-bottom:8px;
+    border-bottom:1px solid rgba(255,255,255,.1)}
+  .logo{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;
+    background:radial-gradient(circle at 30% 20%, var(--accent), var(--accent2));
+    font-weight:900}
+  h1{font-size:18px;margin:0;text-transform:uppercase;letter-spacing:1px;}
+  .muted{color:var(--muted);font-size:13px}
+  main{display:grid;gap:16px;padding-top:16px}
+  .controls{display:grid;place-items:center;gap:8px;padding:12px;background:#111;border-radius:14px;}
+  .circle{width:120px;height:120px;border-radius:50%;display:grid;place-items:center;
+    cursor:pointer;background:radial-gradient(circle at 30% 30%, var(--accent), var(--accent2));
+    color:#fff;font-size:18px;font-weight:700;box-shadow:0 0 22px rgba(0,240,255,.45);
+    transition:transform .18s ease;}
+  .circle:active{transform:scale(.96)}
+  .circle.listening{animation:listenPulse 1.6s infinite}
+  @keyframes listenPulse{
+    0%{transform:scale(1);box-shadow:0 0 20px rgba(0,240,255,.5)}
+    50%{transform:scale(1.08);box-shadow:0 0 50px rgba(143,0,255,.6)}
+    100%{transform:scale(1);box-shadow:0 0 20px rgba(0,240,255,.5)}
+  }
+  .stopBtn{width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;
+    background:radial-gradient(circle at 30% 30%, #ff0044, #800020);
+    color:white;font-size:20px;font-weight:bold;}
+  .status{margin-top:6px;color:var(--muted);font-size:13px;text-align:center}
+  .logCard{background:#111;border-radius:12px;padding:10px;}
+  .log{height:240px;overflow-y:auto;font-family:'Share Tech Mono',monospace;
+    font-size:13px;color:#c8f8ff;}
+  .log p{margin:6px 0}
+  .log .u{color:#7ee9ff}
+  .log .j{color:#d4b8ff}
+  #textInput{width:100%;padding:10px;border-radius:8px;border:1px solid #444;
+    background:#000;color:#fff;margin-top:6px;}
+  #sendBtn{margin-top:6px;padding:8px 14px;border:none;border-radius:6px;
+    background:#00f0ff;color:#000;font-weight:bold;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="panel">
+    <header>
+      <div class="logo">J</div>
+      <div>
+        <h1>JARVIS <span class="muted">AI Science Assistant</span></h1>
+        <div id="statusText" class="muted">Idle</div>
+      </div>
+    </header>
+    <main>
+      <section class="controls">
+        <button id="jarvisBtn" class="circle">🎤</button>
+        <button id="stopBtn" class="stopBtn">✖</button>
+        <div id="status" class="status">Tap 🎤 or type below</div>
+      </section>
+      <section class="controls">
+        <input id="textInput" type="text" placeholder="Ask Physics, Chemistry, Math, Biology..." />
+        <button id="sendBtn">Send</button>
+      </section>
+      <section class="logCard">
+        <div id="log" class="log"></div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<script>
+const Recognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+const synth=window.speechSynthesis;
+const logEl=document.getElementById('log');
+const jarvisBtn=document.getElementById('jarvisBtn');
+const stopBtn=document.getElementById('stopBtn');
+const statusEl=document.getElementById('status');
+const statusText=document.getElementById('statusText');
+const textInput=document.getElementById('textInput');
+const sendBtn=document.getElementById('sendBtn');
+
+let chosenVoice=null;
+function pickVoice(){
+  const voices=synth.getVoices();
+  chosenVoice=voices.find(v=>/male|david|daniel|alex|mark|matt/i.test(v.name))||
+              voices.find(v=>/en/.test(v.lang))||voices[0];
+}
+if(synth) synth.onvoiceschanged=pickVoice;
+
+function speak(text){
+  if(!synth) return;
+  const u=new SpeechSynthesisUtterance(text);
+  if(chosenVoice) u.voice=chosenVoice;
+  u.rate=0.95; u.pitch=0.9;
+  if(synth.speaking) synth.cancel();
+  synth.speak(u);
+}
+stopBtn.addEventListener('click',()=>{synth.cancel(); setStatus("Stopped.");});
+
+function append(type,text){
+  const p=document.createElement('p');
+  p.className=type;
+  p.textContent=(type==='u'?'You: ':'JARVIS: ')+text;
+  logEl.appendChild(p); logEl.scrollTop=logEl.scrollHeight;
+}
+async function displayReply(text){speak(text); append('j',text);}
+function setStatus(t){statusEl.textContent=t; statusText.textContent=t;}
+
+// ---------- Math Solver ----------
+function mathSolve(q){
+  try{
+    let exp=q.toLowerCase()
+      .replace(/what is|calculate|solve|equals?/gi,'')
+      .replace(/plus/gi,'+').replace(/minus/gi,'-')
+      .replace(/times|multiplied by|x/gi,'*')
+      .replace(/divided by|over/gi,'/')
+      .replace(/power of|to the power/gi,'**')
+      .replace(/square root of|sqrt/gi,'Math.sqrt')
+      .trim();
+    if(!/^[0-9+\-*/().\sMathsqrt]+$/.test(exp)) return null;
+    let result=Function(`"use strict"; return (${exp})`)();
+    if(result!==undefined&&!isNaN(result)) return "The answer is "+result;
+    return null;
+  }catch{return null;}
+}
+
+// ---------- Built-in ----------
+function builtinReply(q){
+  const now=new Date();
+  if(/hello|hi|hey/.test(q)) return "Hello, how can I help?";
+  if(/\btime\b/.test(q)) return `It's ${now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}.`;
+  if(/\bdate\b/.test(q)) return `Today is ${now.toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'})}.`;
+  if(/your name/.test(q)) return "I am JARVIS — your science assistant.";
+  if(/how are you/.test(q)) return "I'm fully operational and ready for Physics, Chemistry, Math, and Biology.";
+  return null;
+}
+
+// ---------- Wikipedia ----------
+async function wikiLookup(q){
+  try{
+    const sUrl=`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&utf8=&format=json&origin=*`;
+    const sres=await fetch(sUrl); const sjson=await sres.json();
+    const title=sjson?.query?.search?.[0]?.title; if(!title) return null;
+    const pUrl=`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+    const pres=await fetch(pUrl); const pjson=await pres.json();
+    return pjson?.extract?`${pjson.extract} (Wikipedia)`:null;
+  }catch{return null;}
+}
+
+// ---------- AI API via Netlify ----------
+async function aiLookup(q){
+  try{
+    const res=await fetch("/.netlify/functions/ai",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({query:q})
+    });
+    const data=await res.json();
+    return data.reply;
+  }catch(e){return null;}
+}
+
+// ---------- Main Query ----------
+async function processQuery(raw){
+  let q=raw.replace(/jarvis/ig,'').trim()||raw;
+  let r=builtinReply(q); if(r){await displayReply(r); setStatus("Idle"); return;}
+  let m=mathSolve(q); if(m){await displayReply(m); setStatus("Idle"); return;}
+  setStatus("Searching...");
+  let a=await aiLookup(q); if(a){await displayReply(a); setStatus("Idle"); return;}
+  let w=await wikiLookup(q); if(w){await displayReply(w); setStatus("Idle"); return;}
+  await displayReply("Sorry, I couldn't find anything.");
+  setStatus("Idle");
+}
+
+// 🎤 Mic
+jarvisBtn.addEventListener('click',()=>{
+  if(!Recognition){setStatus("Mic not supported. Use text.");return;}
+  const recog=new Recognition(); recog.lang='en-US'; recog.interimResults=false;
+  recog.onstart=()=>{setStatus("Listening..."); jarvisBtn.classList.add('listening');};
+  recog.onresult=e=>{
+    jarvisBtn.classList.remove('listening'); setStatus("Processing...");
+    const raw=e.results[0][0].transcript; append('u',raw); processQuery(raw);
+  };
+  recog.onerror=()=>{setStatus("Mic error"); jarvisBtn.classList.remove('listening');};
+  recog.onend=()=> jarvisBtn.classList.remove('listening');
+  recog.start();
+});
+
+// ⌨️ Text
+sendBtn.addEventListener('click',()=>{
+  const raw=textInput.value.trim(); if(!raw) return;
+  append('u',raw); textInput.value=""; processQuery(raw);
+});
+
+// Init
+window.addEventListener('load',()=>{
+  pickVoice();
+  displayReply("Hello, I am JARVIS. Ask me any Physics, Chemistry, Math, or Biology question.");
+  setStatus("Idle");
+});
+</script>
+</body>
+</html>
